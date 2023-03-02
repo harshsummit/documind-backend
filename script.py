@@ -21,7 +21,7 @@ processor = LayoutLMv3Processor(feature_extractor, tokenizer)
 model = LayoutLMv3ForSequenceClassification.from_pretrained("models/layoutlmv3-2", local_files_only=True)
 model = model.eval().to("cpu")
 
-image_path = 'test/test4.jpg'
+image_path = 'test/test7.jpg'
 
 def run_yolo():
     try:
