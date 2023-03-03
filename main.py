@@ -64,7 +64,7 @@ async def index():
 
 @app.get("/documind")
 async def index():
-    data = runDocUMind("PAN Card", 80, ["logo-stamp","profile-image"])
+    data = runDocUMind("PAN Card", 80, ["logo-stamp","profile-image"], ["Piyush Bansal"])
     return JSONResponse(content=data)
 
 # @app.post("/extract/pdf")
