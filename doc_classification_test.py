@@ -15,12 +15,15 @@ def scale_bounding_box(box: List[int], width_scale: float, height_scale: float) 
     ]
 
 def predict_document_image(
-        image_path: Path,
+        image_path,
         model: LayoutLMv3ForSequenceClassification,
         processor: LayoutLMv3Processor,
         ocr_result
     ):
-    image = Image.fromarray(image_path).convert("RGB")
+    if isinstance(image_path,str):
+        image = Image.open(image_path).convert("RGB")
+    else:
+        image = Image.fromarray(image_path).convert("RGB")
     width, height = image.size
         
     width_scale = (1000/width)%1000

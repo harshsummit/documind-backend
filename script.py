@@ -28,7 +28,7 @@ processor = LayoutLMv3Processor(feature_extractor, tokenizer)
 model = LayoutLMv3ForSequenceClassification.from_pretrained("models/layoutlmv3", local_files_only=True)
 model = model.eval().to("cpu")
 
-img = 'test/test1.jpg'
+img = 'test/test2.jpg'
 
 def converB64tofile(b64):
   image = np.array(Image.open(io.BytesIO(base64.b64decode(b64))))
@@ -90,6 +90,8 @@ def runDocUMind(doc_label, classification_threshold, idChecks, detailCheck, imag
   elif(document_score<classification_threshold):
     temp_res = "Label Check - We are not sure if the document is of type: " + doc_label
     flags.append({ "name": temp_res, "predictedValue": "", "receivedValue": "", "status": "Threshold Not Met","probability": document_score, "coordinates": []})
+  else:
+    flags.append({ "name": "Label Check", "predictedValue": document_class, "receivedValue": doc_label, "status": "Matched","probability": document_score, "coordinates": []})
   
 
   # Second model check
