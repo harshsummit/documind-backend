@@ -1,5 +1,9 @@
 # imports for yolo
 import torch
+import base64
+import numpy as np
+from PIL import Image
+import io
 
 # imports for doc classification
 from doc_classification_test import predict_document_image
@@ -7,7 +11,6 @@ from transformers import LayoutLMv3FeatureExtractor, LayoutLMv3TokenizerFast, La
 
 # imports for paddle ocr
 import os
-import json
 from paddleocr import PaddleOCR
 os.environ["KMP_DUPLICATE_LIB_OK"]="True"
 
@@ -25,9 +28,13 @@ processor = LayoutLMv3Processor(feature_extractor, tokenizer)
 model = LayoutLMv3ForSequenceClassification.from_pretrained("models/layoutlmv3", local_files_only=True)
 model = model.eval().to("cpu")
 
-image_path = 'test/test14.jpg'
+img = 'test/test1.jpg'
 
-def run_yolo():
+def converB64tofile(b64):
+  image = np.array(Image.open(io.BytesIO(base64.b64decode(b64))))
+  return image
+
+def run_yolo(image_path = img):
     try:
       results = yolo_model(image_path)
       # results.crop()
@@ -46,7 +53,7 @@ def run_yolo():
     except:
        return "Yolo Failed"
 
-def get_ocr_result():
+def get_ocr_result(image_path = img):
   result = ocr.ocr(image_path, cls=True)
   results_dict = []
 
@@ -61,52 +68,53 @@ def get_ocr_result():
     })
   return results_dict
 
-def get_doc_class(ocr_result = []):
+def get_doc_class(ocr_result = [], image_path=img):
   if(len(ocr_result)==0):
    ocr_result =get_ocr_result()
   print(ocr_result)
   return predict_document_image(image_path, model, processor, ocr_result)
 
-def runDocUMind(doc_label, classification_threshold, idChecks, detailCheck):
+def runDocUMind(doc_label, classification_threshold, idChecks, detailCheck, image_path=img):
+  response = { "name": "Sample Document", "documentType": "Non ID Proof", "uploadedDate": "26/02/2023", "status": "Auto Approved",}
+  id_types = {"Driving", "PAN Card", "Aadhar"}
+  if doc_label in id_types:
+     response["documentType"] = "ID proof"
+  
   flags = []
-  ocr_result =get_ocr_result()
-  result = get_doc_class(ocr_result)
+  ocr_result =get_ocr_result(image_path)
+  result = get_doc_class(ocr_result, image_path)
   document_class = result["class"]
   document_score = result["score"]
   if(document_class!=doc_label):
-    flags.append({ "name": "Label doesn't match the document type", "predictedValue": document_class, "receivedValue": doc_label, "status": "Not Matched","probability": document_score, "coordinates": []})
+    flags.append({ "name": "Label Check", "predictedValue": document_class, "receivedValue": doc_label, "status": "Not Matched","probability": document_score, "coordinates": []})
   elif(document_score<classification_threshold):
-    temp_res = "We are not sure if the document is of type: " + doc_label
+    temp_res = "Label Check - We are not sure if the document is of type: " + doc_label
     flags.append({ "name": temp_res, "predictedValue": "", "receivedValue": "", "status": "Threshold Not Met","probability": document_score, "coordinates": []})
   
-  id_types = {"Driving", "PAN Card", "Aadhar"}
 
   # Second model check
 
   if doc_label in id_types:
     print("Its an ID, you may run YOLO")
-    yolo_results = run_yolo()
+    yolo_results = run_yolo(image_path)
 
-    if not isinstance(yolo_results, list):
-      return flags
+    if isinstance(yolo_results, list):
+      entities_found = {}
+      for i in range(len(yolo_results)):
+        featureType = yolo_results[i]["name"]
+        if(featureType in entities_found):
+          entities_found[featureType].append(i)
+        else:
+          entities_found[featureType] = [i]
 
-    entities_found = {}
-    for i in range(len(yolo_results)):
-      featureType = yolo_results[i]["name"]
-      if(featureType in entities_found):
-        entities_found[featureType].append(i)
-      else:
-        entities_found[featureType] = [i]
-
-    for x in idChecks:
-      if x not in entities_found:
-        flags.append({ "name": x, "predictedValue": "", "receivedValue": "", "status": "Not Found","probability": "", "coordinates": []})
-      else:
-        for feature in entities_found[x]:
-          currentFeature = yolo_results[feature]
-          coordinates = [currentFeature["xmin"], currentFeature["ymin"], currentFeature["xmax"], currentFeature["ymax"]]
-          flags.append({ "name": currentFeature["name"], "predictedValue": "", "receivedValue": "", "status": "Feature Found","probability": currentFeature["confidence"], "coordinates": coordinates})
-
+      for x in idChecks:
+        if x not in entities_found:
+          flags.append({ "name": x, "predictedValue": "", "receivedValue": "", "status": "Not Found","probability": "", "coordinates": []})
+        else:
+          for feature in entities_found[x]:
+            currentFeature = yolo_results[feature]
+            coordinates = [currentFeature["xmin"], currentFeature["ymin"], currentFeature["xmax"], currentFeature["ymax"]]
+            flags.append({ "name": currentFeature["name"], "predictedValue": "", "receivedValue": "", "status": "Feature Found","probability": currentFeature["confidence"], "coordinates": coordinates})
 
     # Third model check
 
@@ -121,15 +129,17 @@ def runDocUMind(doc_label, classification_threshold, idChecks, detailCheck):
         flags.append({ "name": "Info Check", "predictedValue": "", "receivedValue": x, "status": "Info Not Found","probability": "", "coordinates": []})
 
     
-    img = cv2.imread(image_path)
-    lap_var = cv2.Laplacian(img, cv2.CV_64F).var()
+    # img = cv2.imread(image_path)
+    lap_var = cv2.Laplacian(image_path, cv2.CV_64F).var()
     if lap_var < 100:
         print('Poor Image Quality (Blurry)')
         flags.append({ "name": "Image is Blur", "predictedValue": "", "receivedValue": "", "status": "Image is poor in quality","probability": "", "coordinates": []})
     else:
         print('Good Image Quality')
+    
+  response["features"] = flags
 
-  return flags
+  return response
 
 def findInfo(s1, ocrResults = []):
   s1 = s1.lower()

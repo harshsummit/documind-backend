@@ -1,9 +1,9 @@
 from typing import Union
-from fastapi import FastAPI, Response
-import json
+from fastapi import FastAPI
+from typing import List
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
-from script import run_yolo, get_ocr_result, get_doc_class, runDocUMind
+from script import run_yolo, get_ocr_result, get_doc_class, runDocUMind, converB64tofile
 from fastapi.middleware.cors import CORSMiddleware
 
 
@@ -13,15 +13,6 @@ origins = [
     "*"
 ]
 
-
-class Image(BaseModel):
-    filename: str
-    b64: str
-
-
-class Pdf(BaseModel):
-    filename: str
-    b64: str
 
 
 app = FastAPI()
@@ -62,14 +53,36 @@ async def index():
 async def index():
     return get_doc_class()
 
+class Payload(BaseModel):
+    doclabel: str
+    classificationThreshold: int
+    idChecks: List[str] = []
+    detailCheck: List[str] = []
+
+class Document(BaseModel):
+    docid: str
+    filename: str
+    fileb64: str
+    payload: Payload
+
 @app.get("/documind")
 async def index():
-    data = runDocUMind("PAN Card", 80, ["logo-stamp","profile-image"], ["Piyush Bansal"])
+    data = runDocUMind("PAN Card", 80, ["logo-stamp","profile-image"], ["Piyush Bansal"], 'test/test2.jpg')
     return JSONResponse(content=data)
 
-# @app.post("/extract/pdf")
-# async def index(pdf: Pdf):
-#     return {"text": extract_from_pdf(pdf.b64, pdf.filename)}
+@app.post("/documind")
+async def index(document: Document):
+    doclabel = document.payload.doclabel
+    classificationThreshold = document.payload.classificationThreshold
+    idChecks = document.payload.idChecks
+    detailCheck = document.payload.detailCheck
+    fileObject = converB64tofile(document.fileb64)
+    data = runDocUMind(doclabel, classificationThreshold, idChecks, detailCheck, fileObject)
+    return JSONResponse(content=data)
+
+@app.get("/test")
+async def index(document: Document):
+    return {"text": document}
 
 
 # @app.post("/classify/image")

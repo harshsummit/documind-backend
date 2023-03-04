@@ -20,7 +20,7 @@ def predict_document_image(
         processor: LayoutLMv3Processor,
         ocr_result
     ):
-    image = Image.open(image_path).convert("RGB")
+    image = Image.fromarray(image_path).convert("RGB")
     width, height = image.size
         
     width_scale = (1000/width)%1000
