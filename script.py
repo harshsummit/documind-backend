@@ -74,8 +74,8 @@ def get_doc_class(ocr_result = [], image_path=img):
   print(ocr_result)
   return predict_document_image(image_path, model, processor, ocr_result)
 
-def runDocUMind(doc_label, classification_threshold, idChecks, detailCheck, image_path=img):
-  response = { "name": "Sample Document", "documentType": "Non ID Proof", "uploadedDate": "26/02/2023", "status": "Auto Approved",}
+def runDocUMind(docid,doc_label, classification_threshold, idChecks, detailCheck, image_path=img):
+  response = { "docid": docid, "name": "Sample Document", "documentType": "Non ID Proof", "uploadedDate": "26/02/2023", "status": "Auto Approved",}
   id_types = {"Driving", "PAN Card", "Aadhar"}
   if doc_label in id_types:
      response["documentType"] = "ID proof"

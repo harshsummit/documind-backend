@@ -67,17 +67,18 @@ class Document(BaseModel):
 
 @app.get("/documind")
 async def index():
-    data = runDocUMind("PAN Card", 80, ["logo-stamp","profile-image"], ["Piyush Bansal"], 'test/test2.jpg')
+    data = runDocUMind("1","PAN Card", 80, ["logo-stamp","profile-image"], ["Piyush Bansal"], 'test/test2.jpg')
     return JSONResponse(content=data)
 
 @app.post("/documind")
 async def index(document: Document):
+    docid = document.docid
     doclabel = document.payload.doclabel
     classificationThreshold = document.payload.classificationThreshold
     idChecks = document.payload.idChecks
     detailCheck = document.payload.detailCheck
     fileObject = converB64tofile(document.fileb64)
-    data = runDocUMind(doclabel, classificationThreshold, idChecks, detailCheck, fileObject)
+    data = runDocUMind(docid,doclabel, classificationThreshold, idChecks, detailCheck, fileObject)
     return JSONResponse(content=data)
 
 @app.get("/test")
