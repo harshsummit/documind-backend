@@ -133,7 +133,7 @@ def runDocUMind(docid,doc_label, docType, classification_threshold, idChecks, de
         yj = int(yolo_results[idx]["ymax"])
         crop_img = image_path[yi:yj, xi:xj]
         crop_img = cv2.cvtColor(crop_img, cv2.COLOR_BGR2RGB)
-        ppimages.append([crop_img,docid])
+        ppimages.append([crop_img,doc_label])
 
   # Third model check
 
@@ -242,5 +242,10 @@ def clusterProfiles(ppimages):
   for i, label in enumerate(kmeans.labels_):
       image_clusters[label].append(imglist[i][1])
 
+  result = dict()
 
-  return image_clusters
+  for key in image_clusters:
+     if image_clusters[key] != [-1]:
+        result[key] = image_clusters[key]
+
+  return result
