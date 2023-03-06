@@ -17,6 +17,13 @@ os.environ["KMP_DUPLICATE_LIB_OK"]="True"
 # Import for blur check
 import cv2
 
+# For profile matching
+
+from deepface import DeepFace
+from deepface.commons import functions
+from sklearn.cluster import KMeans
+from sklearn.metrics import silhouette_score
+##################
 
 ocr = PaddleOCR(use_angle_cls=True, lang='en')
 
@@ -74,11 +81,10 @@ def get_doc_class(ocr_result = [], image_path=img):
   print(ocr_result)
   return predict_document_image(image_path, model, processor, ocr_result)
 
-def runDocUMind(docid,doc_label, docType, classification_threshold, idChecks, detailCheck, image_path=img):
+def runDocUMind(docid,doc_label, docType, classification_threshold, idChecks, detailCheck, image_path=img, ppimages=[]):
   response = { "docid": docid, "name": doc_label, "docType": docType, "uploadedDate": "26/02/2023", "status": "Auto Approved",}
   
   flags = []
-  ppimages = []
   ocr_result =get_ocr_result(image_path)
   result = get_doc_class(ocr_result, image_path)
   document_class = result["class"]
@@ -127,7 +133,7 @@ def runDocUMind(docid,doc_label, docType, classification_threshold, idChecks, de
         yj = int(yolo_results[idx]["ymax"])
         crop_img = image_path[yi:yj, xi:xj]
         crop_img = cv2.cvtColor(crop_img, cv2.COLOR_BGR2RGB)
-        ppimages.append(crop_img)
+        ppimages.append([crop_img,docid])
 
   # Third model check
 
@@ -160,6 +166,7 @@ def runDocUMind(docid,doc_label, docType, classification_threshold, idChecks, de
 
 def multiDoc(documents):
   result = []
+  ppimages = []
   for document in documents:
     docid = document.docid
     docType = document.payload.docType
@@ -168,9 +175,9 @@ def multiDoc(documents):
     idChecks = document.payload.idChecks
     detailCheck = document.payload.detailCheck
     fileObject = converB64tofile(document.fileb64)
-    data = runDocUMind(docid,doclabel, docType, classificationThreshold, idChecks, detailCheck, fileObject)
+    data = runDocUMind(docid,doclabel, docType, classificationThreshold, idChecks, detailCheck, fileObject, ppimages)
     result.append(data)
-  print(result)
+  result.append(clusterProfiles(ppimages))
   return result
 
 def findInfo(s1, ocrResults = []):
@@ -192,3 +199,45 @@ def longestCommonSubsequence(text1: str, text2: str) -> int:
             for j, d in enumerate(text2):
                 dp[i + 1][j + 1] = 1 + dp[i][j] if c == d else max(dp[i][j + 1], dp[i + 1][j])
         return dp[-1][-1]
+
+def clusterProfiles(ppimages):
+  
+  with open('dummyimg.txt', 'r') as file:
+    file_contents = file.read()
+  file_contents = converB64tofile(file_contents)
+  embeddings = []
+  ppimages.append([file_contents,-1])
+  imglist = []
+  for img_idx in range(len(ppimages)):
+      img = ppimages[img_idx]
+      try:
+          embedding = DeepFace.represent(img[0], model_name='Facenet512')
+          embeddings.append(embedding[0]['embedding'])
+          imglist.append(img)
+      except:
+          # ppimages.pop(img_idx)
+          print(f"Error extracting embedding for {img_idx}")
+
+  embeddings = np.array(embeddings)
+
+  scores = []
+  for k in range(2, len(imglist)):
+      kmeans = KMeans(n_clusters=k)
+      kmeans.fit(embeddings)
+      score = silhouette_score(embeddings, kmeans.labels_)
+      scores.append(score)
+
+  num_clusters = np.argmax(scores) + 2
+
+  kmeans = KMeans(n_clusters=num_clusters)
+  kmeans.fit(embeddings)
+
+
+  image_clusters = {i: [] for i in range(num_clusters)}
+
+  print(imglist)
+  for i, label in enumerate(kmeans.labels_):
+      image_clusters[label].append(imglist[i][1])
+
+
+  return image_clusters
