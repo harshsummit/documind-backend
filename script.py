@@ -191,20 +191,16 @@ def findInfo(s1, ocrResults = []):
     text = tokens["word"].lower()
     if text.find(s1) >= 0 or text.find(s2) >= 0 :
       return [tokens, len(s1)]
-    a = longestCommonSubsequence(s1, text)
-    if a > res[1]:
-      res = [tokens , a]
   return res
 
-def longestCommonSubsequence(text1: str, text2: str) -> int:
-        dp = [[0] * (len(text2) + 1) for _ in range(len(text1) + 1)]
-        for i, c in enumerate(text1):
-            for j, d in enumerate(text2):
-                dp[i + 1][j + 1] = 1 + dp[i][j] if c == d else max(dp[i][j + 1], dp[i + 1][j])
-        return dp[-1][-1]
+# def longestCommonSubsequence(text1: str, text2: str) -> int:
+#         dp = [[0] * (len(text2) + 1) for _ in range(len(text1) + 1)]
+#         for i, c in enumerate(text1):
+#             for j, d in enumerate(text2):
+#                 dp[i + 1][j + 1] = 1 + dp[i][j] if c == d else max(dp[i][j + 1], dp[i + 1][j])
+#         return dp[-1][-1]
 
 def clusterProfiles(ppimages):
-  
   with open('dummyimg.txt', 'r') as file:
     file_contents = file.read()
   file_contents = converB64tofile(file_contents)
