@@ -31,7 +31,7 @@ model = model.eval().to("cpu")
 img = 'test/test2.jpg'
 
 def converB64tofile(b64):
-  image = np.array(Image.open(io.BytesIO(base64.b64decode(b64))))
+  image = np.array(Image.open(io.BytesIO(base64.b64decode(b64))).convert("RGB"))
   return image
 
 def run_yolo(image_path = img):
@@ -74,13 +74,11 @@ def get_doc_class(ocr_result = [], image_path=img):
   print(ocr_result)
   return predict_document_image(image_path, model, processor, ocr_result)
 
-def runDocUMind(docid,doc_label, classification_threshold, idChecks, detailCheck, image_path=img):
-  response = { "docid": docid, "name": doc_label, "documentType": "Non ID Proof", "uploadedDate": "26/02/2023", "status": "Auto Approved",}
-  id_types = {"Driving", "PAN Card", "Aadhar"}
-  if doc_label in id_types:
-     response["documentType"] = "ID proof"
+def runDocUMind(docid,doc_label, docType, classification_threshold, idChecks, detailCheck, image_path=img):
+  response = { "docid": docid, "name": doc_label, "docType": docType, "uploadedDate": "26/02/2023", "status": "Auto Approved",}
   
   flags = []
+  ppimages = []
   ocr_result =get_ocr_result(image_path)
   result = get_doc_class(ocr_result, image_path)
   document_class = result["class"]
@@ -96,12 +94,14 @@ def runDocUMind(docid,doc_label, classification_threshold, idChecks, detailCheck
 
   # Second model check
 
-  if doc_label in id_types:
+  if docType == "ID Proof":
     print("Its an ID, you may run YOLO")
     yolo_results = run_yolo(image_path)
 
     if isinstance(yolo_results, list):
       entities_found = {}
+
+
       for i in range(len(yolo_results)):
         featureType = yolo_results[i]["name"]
         if(featureType in entities_found):
@@ -118,35 +118,65 @@ def runDocUMind(docid,doc_label, classification_threshold, idChecks, detailCheck
             coordinates = [currentFeature["xmin"], currentFeature["ymin"], currentFeature["xmax"], currentFeature["ymax"]]
             flags.append({ "name": currentFeature["name"], "predictedValue": "", "receivedValue": "", "status": "Feature Found","probability": currentFeature["confidence"], "coordinates": coordinates})
 
+      # code for adding profile images to ppimages array
+
+      for idx in entities_found["profile-image"]:
+        xi = int(yolo_results[idx]["xmin"])
+        yi = int(yolo_results[idx]["ymin"])
+        xj = int(yolo_results[idx]["xmax"])
+        yj = int(yolo_results[idx]["ymax"])
+        crop_img = image_path[yi:yj, xi:xj]
+        crop_img = cv2.cvtColor(crop_img, cv2.COLOR_BGR2RGB)
+        ppimages.append(crop_img)
+
   # Third model check
 
   for x in detailCheck:
-    findResult = findInfo(x, ocr_result)
-    print(findResult)
-    if(len(findResult[0]) > 0):
-      coordinates = findResult[0]["bounding_box"]
-      coordinates = [ coordinates[0], coordinates[3], coordinates[2], coordinates[1]]
-      flags.append({ "name": "Info Check", "predictedValue": findResult[0]["word"], "receivedValue": x, "status": "Info Found","probability": (findResult[1]/len(x))*100, "coordinates": coordinates})
-    else:
-      flags.append({ "name": "Info Check", "predictedValue": "", "receivedValue": x, "status": "Info Not Found","probability": "", "coordinates": []})
+    if len(x)>0:
+      findResult = findInfo(x, ocr_result)
+      print(findResult)
+      if(len(findResult[0]) > 0):
+        coordinates = findResult[0]["bounding_box"]
+        coordinates = [ coordinates[0], coordinates[3], coordinates[2], coordinates[1]]
+        flags.append({ "name": "Info Check", "predictedValue": findResult[0]["word"], "receivedValue": x, "status": "Info Found","probability": (findResult[1]/len(x))*100, "coordinates": coordinates})
+      else:
+        flags.append({ "name": "Info Check", "predictedValue": "", "receivedValue": x, "status": "Info Not Found","probability": "", "coordinates": []})
 
     
-    # img = cv2.imread(image_path)
-    lap_var = cv2.Laplacian(image_path, cv2.CV_64F).var()
-    if lap_var < 100:
-        print('Poor Image Quality (Blurry)')
-        flags.append({ "name": "Image is Blur", "predictedValue": "", "receivedValue": "", "status": "Image is poor in quality","probability": "", "coordinates": []})
-    else:
-        print('Good Image Quality')
-    
+  # img = cv2.imread(image_path)
+  lap_var = cv2.Laplacian(image_path, cv2.CV_64F).var()
+  if lap_var < 100:
+      print('Poor Image Quality (Blurry)')
+      flags.append({ "name": "Image is Blur", "predictedValue": "", "receivedValue": "", "status": "Image is poor in quality","probability": "", "coordinates": []})
+  else:
+      print('Good Image Quality')
+  
   response["features"] = flags
+
+
+  # Profile Image Checks
 
   return response
 
+def multiDoc(documents):
+  result = []
+  for document in documents:
+    docid = document.docid
+    docType = document.payload.docType
+    doclabel = document.payload.doclabel
+    classificationThreshold = document.payload.classificationThreshold
+    idChecks = document.payload.idChecks
+    detailCheck = document.payload.detailCheck
+    fileObject = converB64tofile(document.fileb64)
+    data = runDocUMind(docid,doclabel, docType, classificationThreshold, idChecks, detailCheck, fileObject)
+    result.append(data)
+  print(result)
+  return result
+
 def findInfo(s1, ocrResults = []):
   s1 = s1.lower()
-  s2 = s1.replace(" ", "")
-  res = ["", (len(s1)/4) * 3]
+  s2 = s1.replace(" ", "").lower()
+  res = ["", 0.9]
   for tokens in ocrResults:
     text = tokens["word"].lower()
     if text.find(s1) >= 0 or text.find(s2) >= 0 :

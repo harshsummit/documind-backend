@@ -3,7 +3,7 @@ from fastapi import FastAPI
 from typing import List
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
-from script import run_yolo, get_ocr_result, get_doc_class, runDocUMind, converB64tofile
+from script import run_yolo, get_ocr_result, get_doc_class, runDocUMind, multiDoc
 from fastapi.middleware.cors import CORSMiddleware
 
 
@@ -56,6 +56,7 @@ async def index():
 class Payload(BaseModel):
     doclabel: str
     classificationThreshold: int
+    docType: str
     idChecks: List[str] = []
     detailCheck: List[str] = []
 
@@ -65,21 +66,17 @@ class Document(BaseModel):
     fileb64: str
     payload: Payload
 
+class Documents(BaseModel):
+    documents: List[Document]
+
 @app.get("/documind")
 async def index():
     data = runDocUMind("1","PAN Card", 80, ["logo-stamp","profile-image"], ["Piyush Bansal"], 'test/test2.jpg')
     return JSONResponse(content=data)
 
 @app.post("/documind")
-async def index(document: Document):
-    docid = document.docid
-    doclabel = document.payload.doclabel
-    classificationThreshold = document.payload.classificationThreshold
-    idChecks = document.payload.idChecks
-    detailCheck = document.payload.detailCheck
-    fileObject = converB64tofile(document.fileb64)
-    data = runDocUMind(docid,doclabel, classificationThreshold, idChecks, detailCheck, fileObject)
-    return JSONResponse(content=data)
+async def index(documents: Documents):
+    return JSONResponse(content=multiDoc(documents.documents))
 
 @app.get("/test")
 async def index(document: Document):
