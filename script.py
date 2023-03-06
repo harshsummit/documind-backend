@@ -75,7 +75,7 @@ def get_doc_class(ocr_result = [], image_path=img):
   return predict_document_image(image_path, model, processor, ocr_result)
 
 def runDocUMind(docid,doc_label, classification_threshold, idChecks, detailCheck, image_path=img):
-  response = { "docid": docid, "name": "Sample Document", "documentType": "Non ID Proof", "uploadedDate": "26/02/2023", "status": "Auto Approved",}
+  response = { "docid": docid, "name": doc_label, "documentType": "Non ID Proof", "uploadedDate": "26/02/2023", "status": "Auto Approved",}
   id_types = {"Driving", "PAN Card", "Aadhar"}
   if doc_label in id_types:
      response["documentType"] = "ID proof"
@@ -118,17 +118,17 @@ def runDocUMind(docid,doc_label, classification_threshold, idChecks, detailCheck
             coordinates = [currentFeature["xmin"], currentFeature["ymin"], currentFeature["xmax"], currentFeature["ymax"]]
             flags.append({ "name": currentFeature["name"], "predictedValue": "", "receivedValue": "", "status": "Feature Found","probability": currentFeature["confidence"], "coordinates": coordinates})
 
-    # Third model check
+  # Third model check
 
-    for x in detailCheck:
-      findResult = findInfo(x, ocr_result)
-      print(findResult)
-      if(len(findResult[0]) > 0):
-        coordinates = findResult[0]["bounding_box"]
-        coordinates = [ coordinates[0], coordinates[3], coordinates[2], coordinates[1]]
-        flags.append({ "name": "Info Check", "predictedValue": findResult[0]["word"], "receivedValue": x, "status": "Info Found","probability": (findResult[1]/len(x))*100, "coordinates": coordinates})
-      else:
-        flags.append({ "name": "Info Check", "predictedValue": "", "receivedValue": x, "status": "Info Not Found","probability": "", "coordinates": []})
+  for x in detailCheck:
+    findResult = findInfo(x, ocr_result)
+    print(findResult)
+    if(len(findResult[0]) > 0):
+      coordinates = findResult[0]["bounding_box"]
+      coordinates = [ coordinates[0], coordinates[3], coordinates[2], coordinates[1]]
+      flags.append({ "name": "Info Check", "predictedValue": findResult[0]["word"], "receivedValue": x, "status": "Info Found","probability": (findResult[1]/len(x))*100, "coordinates": coordinates})
+    else:
+      flags.append({ "name": "Info Check", "predictedValue": "", "receivedValue": x, "status": "Info Not Found","probability": "", "coordinates": []})
 
     
     # img = cv2.imread(image_path)
