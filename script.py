@@ -93,12 +93,12 @@ def runDocUMind(docid,doc_label,filename, classification_threshold, idChecks, de
   document_class = result["class"]
   document_score = result["score"]
   if(document_class!=doc_label):
-    flags.append({ "name": "Label Check", "predictedValue": document_class, "receivedValue": doc_label, "status": "Not Matched","probability": document_score, "coordinates": []})
+    flags.append({ "name": "Label Check", "predictedValue": document_class, "inputValue": doc_label, "status": "Not Matched","probability": document_score, "coordinates": [], "code": 404})
   elif(document_score<classification_threshold):
     temp_res = "Label Check - We are not sure if the document is of type: " + doc_label
-    flags.append({ "name": temp_res, "predictedValue": "", "receivedValue": "", "status": "Threshold Not Met","probability": document_score, "coordinates": []})
+    flags.append({ "name": temp_res, "predictedValue": "", "inputValue": "", "status": "Threshold Not Met","probability": document_score, "coordinates": [] , "code": 402})
   else:
-    flags.append({ "name": "Label Check", "predictedValue": document_class, "receivedValue": doc_label, "status": "Matched","probability": document_score, "coordinates": []})
+    flags.append({ "name": "Label Check", "predictedValue": document_class, "inputValue": doc_label, "status": "Matched","probability": document_score, "coordinates": [], "code": 200})
   
 
   # Second model check
@@ -120,12 +120,12 @@ def runDocUMind(docid,doc_label,filename, classification_threshold, idChecks, de
 
       for x in idChecks:
         if x not in entities_found:
-          flags.append({ "name": x, "predictedValue": "", "receivedValue": "", "status": "Not Found","probability": "", "coordinates": []})
+          flags.append({ "name": x, "predictedValue": "", "inputValue": "", "status": "Not Found","probability": "", "coordinates": [], "code": 404})
         else:
           for feature in entities_found[x]:
             currentFeature = yolo_results[feature]
             coordinates = [currentFeature["xmin"], currentFeature["ymin"], currentFeature["xmax"], currentFeature["ymax"]]
-            flags.append({ "name": currentFeature["name"], "predictedValue": "", "receivedValue": "", "status": "Feature Found","probability": currentFeature["confidence"], "coordinates": coordinates})
+            flags.append({ "name": currentFeature["name"], "predictedValue": "", "inputValue": "", "status": "Feature Found","probability": currentFeature["confidence"], "coordinates": coordinates, "code": 200})
 
       # code for adding profile images to ppimages array
 
@@ -147,16 +147,16 @@ def runDocUMind(docid,doc_label,filename, classification_threshold, idChecks, de
       if(len(findResult[0]) > 0):
         coordinates = findResult[0]["bounding_box"]
         coordinates = [ coordinates[0], coordinates[3], coordinates[2], coordinates[1]]
-        flags.append({ "name": "Info Check", "predictedValue": findResult[0]["word"], "receivedValue": x, "status": "Info Found","probability": (findResult[1]/len(x))*100, "coordinates": coordinates})
+        flags.append({ "name": "Info Check", "predictedValue": findResult[0]["word"], "inputValue": x, "status": "Info Found","probability": (findResult[1]/len(x))*100, "coordinates": coordinates, "code": 200})
       else:
-        flags.append({ "name": "Info Check", "predictedValue": "", "receivedValue": x, "status": "Info Not Found","probability": "", "coordinates": []})
+        flags.append({ "name": "Info Check", "predictedValue": "", "inputValue": x, "status": "Info Not Found","probability": "", "coordinates": [], "code": 404})
 
     
   # img = cv2.imread(image_path)
   lap_var = cv2.Laplacian(image_path, cv2.CV_64F).var()
   if lap_var < 100:
       print('Poor Image Quality (Blurry)')
-      flags.append({ "name": "Image is Blur", "predictedValue": "", "receivedValue": "", "status": "Image is poor in quality","probability": "", "coordinates": []})
+      flags.append({ "name": "Image is Blur", "predictedValue": "", "inputValue": "", "status": "Image is poor in quality","probability": "", "coordinates": [], "code": 402})
   else:
       print('Good Image Quality')
   
