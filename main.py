@@ -56,7 +56,6 @@ async def index():
 class Payload(BaseModel):
     doclabel: str
     classificationThreshold: int
-    docType: str
     idChecks: List[str] = []
     detailCheck: List[str] = []
 

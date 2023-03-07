@@ -20,9 +20,9 @@ import cv2
 # For profile matching
 
 from deepface import DeepFace
-from deepface.commons import functions
-from sklearn.cluster import KMeans
-from sklearn.metrics import silhouette_score
+# from deepface.commons import functions
+from sklearn.cluster import DBSCAN
+from sklearn.metrics import pairwise_distances
 ##################
 
 ocr = PaddleOCR(use_angle_cls=True, lang='en')
@@ -81,8 +81,11 @@ def get_doc_class(ocr_result = [], image_path=img):
   print(ocr_result)
   return predict_document_image(image_path, model, processor, ocr_result)
 
-def runDocUMind(docid,doc_label, docType, classification_threshold, idChecks, detailCheck, image_path=img, ppimages=[]):
-  response = { "docid": docid, "name": doc_label, "docType": docType, "uploadedDate": "26/02/2023", "status": "Auto Approved",}
+def runDocUMind(docid,doc_label,filename, classification_threshold, idChecks, detailCheck, image_path=img, ppimages=[]):
+  docType = "NON ID"
+  if doc_label in ["PAN Card", "Aadhar", "Driving"]:
+    docType = "ID Proof"
+  response = { "docid": docid,"name":filename, "label": doc_label, "docType": docType, "uploadedDate": "26/02/2023", "status": "Auto Approved"}
   
   flags = []
   ocr_result =get_ocr_result(image_path)
@@ -105,7 +108,7 @@ def runDocUMind(docid,doc_label, docType, classification_threshold, idChecks, de
     yolo_results = run_yolo(image_path)
 
     if isinstance(yolo_results, list):
-      entities_found = {}
+      entities_found = {"profile-image":[]}
 
 
       for i in range(len(yolo_results)):
@@ -133,7 +136,7 @@ def runDocUMind(docid,doc_label, docType, classification_threshold, idChecks, de
         yj = int(yolo_results[idx]["ymax"])
         crop_img = image_path[yi:yj, xi:xj]
         crop_img = cv2.cvtColor(crop_img, cv2.COLOR_BGR2RGB)
-        ppimages.append([crop_img,doc_label])
+        ppimages.append([crop_img,filename + " " + doc_label])
 
   # Third model check
 
@@ -169,13 +172,13 @@ def multiDoc(documents):
   ppimages = []
   for document in documents:
     docid = document.docid
-    docType = document.payload.docType
+    filename = document.filename
     doclabel = document.payload.doclabel
     classificationThreshold = document.payload.classificationThreshold
     idChecks = document.payload.idChecks
     detailCheck = document.payload.detailCheck
     fileObject = converB64tofile(document.fileb64)
-    data = runDocUMind(docid,doclabel, docType, classificationThreshold, idChecks, detailCheck, fileObject, ppimages)
+    data = runDocUMind(docid,doclabel,filename, classificationThreshold, idChecks, detailCheck, fileObject, ppimages)
     result.append(data)
   if len(ppimages)>=2:
     result.append(clusterProfiles(ppimages))
@@ -201,11 +204,11 @@ def findInfo(s1, ocrResults = []):
 #         return dp[-1][-1]
 
 def clusterProfiles(ppimages):
-  with open('dummyimg.txt', 'r') as file:
-    file_contents = file.read()
-  file_contents = converB64tofile(file_contents)
+  # with open('dummyimg.txt', 'r') as file:
+  #   file_contents = file.read()
+  # file_contents = converB64tofile(file_contents)
   embeddings = []
-  ppimages.append([file_contents,-1])
+  # ppimages.append([file_contents,-1])
   imglist = []
   for img_idx in range(len(ppimages)):
       img = ppimages[img_idx]
@@ -219,29 +222,51 @@ def clusterProfiles(ppimages):
 
   embeddings = np.array(embeddings)
 
-  scores = []
-  for k in range(2, len(imglist)):
-      kmeans = KMeans(n_clusters=k)
-      kmeans.fit(embeddings)
-      score = silhouette_score(embeddings, kmeans.labels_)
-      scores.append(score)
 
-  num_clusters = np.argmax(scores) + 2
+  # scores = []
+  # for k in range(2, len(imglist)):
+  #     kmeans = KMeans(n_clusters=k)
+  #     kmeans.fit(embeddings)
+  #     score = silhouette_score(embeddings, kmeans.labels_)  
+  #     scores.append(score)
 
-  kmeans = KMeans(n_clusters=num_clusters)
-  kmeans.fit(embeddings)
+  # num_clusters = np.argmax(scores) + 2
+
+  # kmeans = KMeans(n_clusters=num_clusters)
+  # kmeans.fit(embeddings)
 
 
+
+  for i in range(len(imglist)):
+    arr = imglist[i][0]  
+    retval, buffer = cv2.imencode('.jpg', arr)
+    img_base64 = base64.b64encode(buffer).decode('utf-8')
+    imglist[i][0] = img_base64
+
+  distances = pairwise_distances(embeddings, metric='euclidean')
+
+  dbscan = DBSCAN(eps=19, min_samples=1, metric='precomputed')
+
+  dbscan.fit(distances)
+
+  labels = dbscan.labels_
+  num_clusters = len(set(labels)) - (1 if -1 in labels else 0)
   image_clusters = {i: [] for i in range(num_clusters)}
+  for i, label in enumerate(labels):
+      image_clusters[label].append(imglist[i])
+    
+  # print(imglist)
 
-  print(imglist)
-  for i, label in enumerate(kmeans.labels_):
-      image_clusters[label].append(imglist[i][1])
+  result = []
 
-  result = dict()
+  print('==============================================================================')
+  for key in image_clusters:
+    for x in image_clusters[key]:
+      print(key , x[1])
+  print('==============================================================================')
 
   for key in image_clusters:
-     if image_clusters[key] != [-1]:
-        result[key] = image_clusters[key]
+     if image_clusters[key][0][1] != -1:
+        result.append(image_clusters[key])
 
   return result
