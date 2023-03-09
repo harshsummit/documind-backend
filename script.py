@@ -176,7 +176,7 @@ def multiDoc(documents, relationImage=""):
   result = []
   ppimages = []
   if relationImage!="":
-    ppimages.append([relationImage, "Profile Image"])
+    ppimages.append([converB64tofile(relationImage), "Profile Image"])
   for document in documents:
     docid = document.docid
     filename = document.filename
