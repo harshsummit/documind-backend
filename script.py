@@ -93,8 +93,10 @@ def runDocUMind(docid,doc_label,filename, classification_threshold, idChecks, de
   document_class = result["class"]
   document_score = result["score"]
   if(document_class!=doc_label):
+    response["status"] = "Recommended Reject"
     flags.append({ "name": "Label Check", "predictedValue": document_class, "inputValue": doc_label, "status": "Not Matched","probability": document_score, "coordinates": [], "code": 404})
   elif(document_score<classification_threshold):
+    response["status"] = "Refer"
     temp_res = "Label Check - We are not sure if the document is of type: " + doc_label
     flags.append({ "name": temp_res, "predictedValue": "", "inputValue": "", "status": "Threshold Not Met","probability": document_score, "coordinates": [] , "code": 402})
   else:
@@ -120,6 +122,7 @@ def runDocUMind(docid,doc_label,filename, classification_threshold, idChecks, de
 
       for x in idChecks:
         if x not in entities_found:
+          response["status"] = "Recommended Reject"
           flags.append({ "name": x, "predictedValue": "", "inputValue": "", "status": "Not Found","probability": "", "coordinates": [], "code": 404})
         else:
           for feature in entities_found[x]:
@@ -149,12 +152,14 @@ def runDocUMind(docid,doc_label,filename, classification_threshold, idChecks, de
         coordinates = [ coordinates[0], coordinates[3], coordinates[2], coordinates[1]]
         flags.append({ "name": "Info Check", "predictedValue": findResult[0]["word"], "inputValue": x, "status": "Info Found","probability": (findResult[1]/len(x))*100, "coordinates": coordinates, "code": 200})
       else:
+        response["status"] = "Refer"
         flags.append({ "name": "Info Check", "predictedValue": "", "inputValue": x, "status": "Info Not Found","probability": "", "coordinates": [], "code": 404})
 
     
   # img = cv2.imread(image_path)
   lap_var = cv2.Laplacian(image_path, cv2.CV_64F).var()
   if lap_var < 100:
+      response["status"] = "Recommended Refer"
       print('Poor Image Quality (Blurry)')
       flags.append({ "name": "Image is Blur", "predictedValue": "", "inputValue": "", "status": "Image is poor in quality","probability": "", "coordinates": [], "code": 402})
   else:
@@ -167,9 +172,11 @@ def runDocUMind(docid,doc_label,filename, classification_threshold, idChecks, de
 
   return response
 
-def multiDoc(documents):
+def multiDoc(documents, relationImage=""):
   result = []
   ppimages = []
+  if relationImage!="":
+    ppimages.append([relationImage, "Profile Image"])
   for document in documents:
     docid = document.docid
     filename = document.filename
@@ -185,6 +192,15 @@ def multiDoc(documents):
   else:
      result.append([])
   return result
+
+def multiRelation(application):
+  applicationId = application.applicationId
+  applicationResponse = { "applicationId" : applicationId, relations: [] }
+  relations = application.relations
+  for relation in relations:
+    result = multiDoc(relation.documents, relation.relationImage)
+    applicationResponse[relations].append({ relation.relationId : result})
+  return applicationResponse
 
 def findInfo(s1, ocrResults = []):
   s1 = s1.lower()
