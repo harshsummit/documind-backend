@@ -199,7 +199,7 @@ def multiRelation(application):
   relations = application.relations
   for relation in relations:
     result = multiDoc(relation.documents, relation.relationImage)
-    applicationResponse["relations"].append({ relation.relationId : result})
+    applicationResponse["relations"].append({ "relationId": relation.relationId, "relationName": relation.relationName ,"documents": result})
   return applicationResponse
 
 def findInfo(s1, ocrResults = []):
