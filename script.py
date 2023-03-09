@@ -33,7 +33,7 @@ feature_extractor = LayoutLMv3FeatureExtractor(apply_ocr=False)
 tokenizer = LayoutLMv3TokenizerFast.from_pretrained("models/layoutlmv3-base", local_files_only=True)
 processor = LayoutLMv3Processor(feature_extractor, tokenizer)
 model = LayoutLMv3ForSequenceClassification.from_pretrained("models/layoutlmv3", local_files_only=True)
-model = model.eval().to("cuda:0")
+model = model.eval()
 
 img = 'test/test2.jpg'
 
