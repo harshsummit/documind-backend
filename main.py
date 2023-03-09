@@ -72,7 +72,6 @@ class Relations(BaseModel):
     relationId: int
     relationName: str
     relationImage: str
-    dob: str
     documents: List[Document]
 
 class Application(BaseModel):
