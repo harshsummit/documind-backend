@@ -176,7 +176,7 @@ def multiDoc(documents, relationImage=""):
   result = []
   ppimages = []
   if relationImage!="":
-    ppimages.append([converB64tofile(relationImage), "Profile Image"])
+    ppimages.append([cv2.cvtColor(converB64tofile(relationImage), cv2.COLOR_BGR2RGB), "Profile Image"])
   for document in documents:
     docid = document.docid
     filename = document.filename
@@ -188,7 +188,11 @@ def multiDoc(documents, relationImage=""):
     data = runDocUMind(docid,doclabel,filename, classificationThreshold, idChecks, detailCheck, fileObject, ppimages)
     result.append(data)
   if len(ppimages)>=2:
-    result.append(clusterProfiles(ppimages))
+    clusterResult = clusterProfiles(ppimages)
+    if(len(clusterResult) >1 ):
+      for x in result:
+        x["status"] = "Refer"
+    result.append(clusterResult)
   else:
      result.append([])
   return result
