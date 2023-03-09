@@ -3,7 +3,7 @@ from fastapi import FastAPI
 from typing import List
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
-from script import run_yolo, get_ocr_result, get_doc_class, runDocUMind, multiDoc
+from script import run_yolo, get_ocr_result, get_doc_class, runDocUMind, multiDoc, multiRelation
 from fastapi.middleware.cors import CORSMiddleware
 
 
@@ -65,8 +65,19 @@ class Document(BaseModel):
     fileb64: str
     payload: Payload
 
-class Documents(BaseModel):
+# class Documents(BaseModel):
+#     documents: List[Document]
+
+class Relations(BaseModel):
+    relationId: int
+    relationName: str
+    relationImage: str
+    dob: str
     documents: List[Document]
+
+class Application(BaseModel):
+    applicationId: int
+    relations: List[Relations]
 
 @app.get("/documind")
 async def index():
@@ -74,8 +85,8 @@ async def index():
     return JSONResponse(content=data)
 
 @app.post("/documind")
-async def index(documents: Documents):
-    return JSONResponse(content=multiDoc(documents.documents))
+async def index(application: Application):
+    return JSONResponse(content=multiRelation(application))
 
 @app.get("/test")
 async def index(document: Document):
