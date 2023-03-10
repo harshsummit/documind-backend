@@ -87,6 +87,9 @@ def runDocUMind(docid,doc_label,filename, classification_threshold, idChecks, de
     docType = "ID Proof"
   response = { "docid": docid,"name":filename, "label": doc_label, "docType": docType, "uploadedDate": "26/02/2023", "status": "Auto Approved"}
   
+  naming = {'profile-image': 'Profile Image', 'logo-stamp': 'Logo Stamp'}
+
+
   flags = []
   ocr_result =get_ocr_result(image_path)
   result = get_doc_class(ocr_result, image_path)
@@ -94,13 +97,13 @@ def runDocUMind(docid,doc_label,filename, classification_threshold, idChecks, de
   document_score = result["score"]
   if(document_class!=doc_label):
     response["status"] = "Recommended Reject"
-    flags.append({ "name": "Label Check", "predictedValue": document_class, "inputValue": doc_label, "status": "Not Matched","probability": document_score, "coordinates": [], "code": 404})
+    flags.append({ "name": "Label Check", "Predicted Value": document_class, "Input Value": doc_label, "status": "Not Matched","Probability": document_score, "coordinates": [], "code": 404})
   elif(document_score<classification_threshold):
     response["status"] = "Refer"
     temp_res = "Label Check - We are not sure if the document is of type: " + doc_label
-    flags.append({ "name": temp_res, "predictedValue": "", "inputValue": "", "status": "Threshold Not Met","probability": document_score, "coordinates": [] , "code": 402})
+    flags.append({ "name": temp_res, "Predicted Value": "", "Input Value": "", "status": "Threshold Not Met","Probability": document_score, "coordinates": [] , "code": 402})
   else:
-    flags.append({ "name": "Label Check", "predictedValue": document_class, "inputValue": doc_label, "status": "Matched","probability": document_score, "coordinates": [], "code": 200})
+    flags.append({ "name": "Label Check", "Predicted Value": document_class, "Input Value": doc_label, "status": "Matched","Probability": document_score, "coordinates": [], "code": 200})
   
 
   # Second model check
@@ -123,12 +126,12 @@ def runDocUMind(docid,doc_label,filename, classification_threshold, idChecks, de
       for x in idChecks:
         if x not in entities_found:
           response["status"] = "Recommended Reject"
-          flags.append({ "name": x, "predictedValue": "", "inputValue": "", "status": "Not Found","probability": "", "coordinates": [], "code": 404})
+          flags.append({ "name": x, "Predicted Value": "", "Input Value": "", "status": "Not Found","Probability": "", "coordinates": [], "code": 404})
         else:
           for feature in entities_found[x]:
             currentFeature = yolo_results[feature]
             coordinates = [currentFeature["xmin"], currentFeature["ymin"], currentFeature["xmax"], currentFeature["ymax"]]
-            flags.append({ "name": currentFeature["name"], "predictedValue": "", "inputValue": "", "status": "Feature Found","probability": currentFeature["confidence"], "coordinates": coordinates, "code": 200})
+            flags.append({ "name": naming[currentFeature["name"]], "Predicted Value": "", "Input Value": "", "status": "Feature Found","Probability": currentFeature["confidence"], "coordinates": coordinates, "code": 200})
 
       # code for adding profile images to ppimages array
 
@@ -150,10 +153,10 @@ def runDocUMind(docid,doc_label,filename, classification_threshold, idChecks, de
       if(len(findResult[0]) > 0):
         coordinates = findResult[0]["bounding_box"]
         coordinates = [ coordinates[0], coordinates[3], coordinates[2], coordinates[1]]
-        flags.append({ "name": "Info Check", "predictedValue": findResult[0]["word"], "inputValue": x, "status": "Info Found","probability": (findResult[1]/len(x))*100, "coordinates": coordinates, "code": 200})
+        flags.append({ "name": "Info Check", "Predicted Value": findResult[0]["word"], "Input Value": x, "status": "Info Found","Probability": (findResult[1]/len(x))*100, "coordinates": coordinates, "code": 200})
       else:
         response["status"] = "Refer"
-        flags.append({ "name": "Info Check", "predictedValue": "", "inputValue": x, "status": "Info Not Found","probability": "", "coordinates": [], "code": 404})
+        flags.append({ "name": "Info Check", "Predicted Value": "", "Input Value": x, "status": "Info Not Found","Probability": "", "coordinates": [], "code": 404})
 
     
   # img = cv2.imread(image_path)
@@ -161,7 +164,7 @@ def runDocUMind(docid,doc_label,filename, classification_threshold, idChecks, de
   if lap_var < 100:
       response["status"] = "Recommended Refer"
       print('Poor Image Quality (Blurry)')
-      flags.append({ "name": "Image is Blur", "predictedValue": "", "inputValue": "", "status": "Image is poor in quality","probability": "", "coordinates": [], "code": 402})
+      flags.append({ "name": "Image is Blur", "Predicted Value": "", "Input Value": "", "status": "Image is poor in quality","Probability": "", "coordinates": [], "code": 402})
   else:
       print('Good Image Quality')
   
