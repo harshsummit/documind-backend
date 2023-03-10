@@ -1,5 +1,6 @@
 from typing import Union
 from fastapi import FastAPI
+import time
 from typing import List
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
@@ -13,8 +14,6 @@ origins = [
     "*"
 ]
 
-
-
 app = FastAPI()
 
 app.add_middleware(
@@ -25,16 +24,24 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+@app.middleware("http")
+async def add_process_time_header(request, call_next):
+    start_time = time.time()
+    response = await call_next(request)
+    process_time = time.time() - start_time
+    response.headers["X-Process-Time"] = str(f'{process_time:0.4f} sec')
+    return response
 
 @app.get("/")
 def index():
     return {
-        "Fast": "Vibe",
-        "hello": "Welcome to the fastapi server",
+        "Documind": "Server",
+        "Hello": "Welcome to the fastapi server",
         "services": {
-            "extract text from image": "/extract/image",
-            "extract text from pdf": "/extract/pdf",
-            "classify the file": "/classify/"
+            "extract featuers from image": "/yolo",
+            "extract text from file": "/ocr",
+            "classify the file": "/doc-class",
+            "run the whole documind": "/documind"
         },
         "Thank you": "for using this service"
     }
