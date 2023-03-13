@@ -209,7 +209,11 @@ def multiRelation(application):
   relations = application.relations
   for relation in relations:
     result = multiDoc(relation.documents, relation.relationImage)
-    applicationResponse["relations"].append({ "relationId": relation.relationId, "relationName": relation.relationName ,"documents": result})
+    risk = "LOW"
+    for x in range(len(result)-1):
+      if result[x]["status"]=="Refer":
+        risk = "HIGH"
+    applicationResponse["relations"].append({ "relationId": relation.relationId, "relationName": relation.relationName ,"documents": result, "risk": risk})
   return applicationResponse
 
 def findInfo(s1, ocrResults = []):
