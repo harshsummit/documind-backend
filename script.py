@@ -4,6 +4,8 @@ import base64
 import numpy as np
 from PIL import Image
 import io
+from datetime import datetime
+
 
 # imports for doc classification
 from doc_classification_test import predict_document_image
@@ -85,7 +87,8 @@ def runDocUMind(docid,doc_label,filename, classification_threshold, idChecks, de
   docType = "NON ID"
   if doc_label in ["PAN Card", "Aadhar", "Driving"]:
     docType = "ID Proof"
-  response = { "docid": docid,"name":filename, "label": doc_label, "docType": docType, "uploadedDate": "26/02/2023", "status": "Auto Approved"}
+  response = { "docid": docid,"name":filename, "label": doc_label, "docType": docType, "uploadedDate": datetime.now().strftime("%d/%m/%Y")
+, "status": "Approve"}
   
   naming = {'profile-image': 'Profile Image', 'logo-stamp': 'Logo Stamp'}
 
@@ -96,7 +99,7 @@ def runDocUMind(docid,doc_label,filename, classification_threshold, idChecks, de
   document_class = result["class"]
   document_score = result["score"]
   if(document_class!=doc_label):
-    response["status"] = "Recommended Reject"
+    response["status"] = "Reject"
     flags.append({ "name": "Label Check", "Predicted Value": document_class, "Input Value": doc_label, "status": "Not Matched","Probability": document_score, "coordinates": [], "code": 404})
   elif(document_score<classification_threshold):
     response["status"] = "Refer"
@@ -125,7 +128,7 @@ def runDocUMind(docid,doc_label,filename, classification_threshold, idChecks, de
 
       for x in idChecks:
         if x not in entities_found:
-          response["status"] = "Recommended Reject"
+          response["status"] = "Reject"
           flags.append({ "name": x, "Predicted Value": "", "Input Value": "", "status": "Not Found","Probability": "", "coordinates": [], "code": 404})
         else:
           for feature in entities_found[x]:
