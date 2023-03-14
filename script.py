@@ -78,9 +78,6 @@ def get_ocr_result(image_path = img):
   return results_dict
 
 def get_doc_class(ocr_result = [], image_path=img):
-  if(len(ocr_result)==0):
-   ocr_result =get_ocr_result()
-  print(ocr_result)
   return predict_document_image(image_path, model, processor, ocr_result)
 
 def runDocUMind(docid,doc_label,filename, classification_threshold, idChecks, detailCheck, image_path=img, ppimages=[]):
