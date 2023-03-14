@@ -95,13 +95,13 @@ def runDocUMind(docid,doc_label,filename, classification_threshold, idChecks, de
   result = get_doc_class(ocr_result, image_path)
   document_class = result["class"]
   document_score = result["score"]
-  if(document_class!=doc_label):
-    response["status"] = "Reject"
-    flags.append({ "name": "Label Check", "Predicted Value": document_class, "Input Value": doc_label, "status": "Not Matched","Probability": document_score, "coordinates": [], "code": 404})
-  elif(document_score<classification_threshold):
+  if(document_score<classification_threshold):
     response["status"] = "Refer"
     temp_res = "Label Check - We are not sure if the document is of type: " + doc_label
-    flags.append({ "name": temp_res, "Predicted Value": "", "Input Value": "", "status": "Threshold Not Met","Probability": document_score, "coordinates": [] , "code": 402})
+    flags.append({ "name": temp_res, "Predicted Value": "Other", "Input Value": doc_label, "status": "Threshold Not Met","Probability": document_score, "coordinates": [] , "code": 402})
+  elif(document_class!=doc_label):
+    response["status"] = "Reject"
+    flags.append({ "name": "Label Check", "Predicted Value": document_class, "Input Value": doc_label, "status": "Not Matched","Probability": document_score, "coordinates": [], "code": 404})
   else:
     flags.append({ "name": "Label Check", "Predicted Value": document_class, "Input Value": doc_label, "status": "Matched","Probability": document_score, "coordinates": [], "code": 200})
   
@@ -171,7 +171,17 @@ def runDocUMind(docid,doc_label,filename, classification_threshold, idChecks, de
   response["features"] = flags
 
 
-  # Profile Image Checks
+  # Forge Check
+  threshold = 4105
+  gray = cv2.cvtColor(image_path, cv2.COLOR_BGR2GRAY)
+
+  variance = np.var(gray)
+  variance_r = np.var(image_path[:,:,0])
+  variance_g = np.var(image_path[:,:,1])
+  variance_b = np.var(image_path[:,:,2])
+
+  if variance > threshold or variance_r > threshold or variance_g > threshold or variance_b > threshold:
+    flags.append({ "name": "High Risk of forgery", "Predicted Value": "", "Input Value": "", "status": "Image has high Variance","Probability": "", "coordinates": [], "code": 404})
 
   return response
 
@@ -272,7 +282,9 @@ def clusterProfiles(ppimages):
 
   distances = pairwise_distances(embeddings, metric='euclidean')
 
-  dbscan = DBSCAN(eps=19, min_samples=1, metric='precomputed')
+  dbscan = DBSCAN(eps=20.5, min_samples=1, metric='precomputed')
+
+  print(distances)
 
   dbscan.fit(distances)
 
