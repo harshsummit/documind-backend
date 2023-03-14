@@ -162,7 +162,7 @@ def runDocUMind(docid,doc_label,filename, classification_threshold, idChecks, de
   # img = cv2.imread(image_path)
   lap_var = cv2.Laplacian(image_path, cv2.CV_64F).var()
   if lap_var < 100:
-      response["status"] = "Recommended Refer"
+      response["status"] = "Refer"
       print('Poor Image Quality (Blurry)')
       flags.append({ "name": "Image is Blur", "Predicted Value": "", "Input Value": "", "status": "Image is poor in quality","Probability": "", "coordinates": [], "code": 402})
   else:
@@ -181,6 +181,7 @@ def runDocUMind(docid,doc_label,filename, classification_threshold, idChecks, de
   variance_b = np.var(image_path[:,:,2])
 
   if variance > threshold or variance_r > threshold or variance_g > threshold or variance_b > threshold:
+    response["status"] = "Refer"
     flags.append({ "name": "High Risk of forgery", "Predicted Value": "", "Input Value": "", "status": "Image has high Variance","Probability": "", "coordinates": [], "code": 404})
 
   return response
@@ -218,7 +219,7 @@ def multiRelation(application):
     result = multiDoc(relation.documents, relation.relationImage)
     risk = "LOW"
     for x in range(len(result)-1):
-      if result[x]["status"]=="Refer":
+      if result[x]["status"]=="Refer" or result[x]["status"]=="Reject":
         risk = "HIGH"
     applicationResponse["relations"].append({ "relationId": relation.relationId, "relationName": relation.relationName ,"documents": result, "risk": risk})
   return applicationResponse
