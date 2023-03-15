@@ -281,7 +281,7 @@ def clusterProfiles(ppimages):
     img_base64 = base64.b64encode(buffer).decode('utf-8')
     imglist[i][0] = img_base64
 
-  distances = pairwise_distances(embeddings, metric='mahalanobis')
+  distances = pairwise_distances(embeddings, metric='euclidean')
 
   dbscan = DBSCAN(eps=20.5, min_samples=1, metric='precomputed')
 
