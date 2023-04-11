@@ -1,10 +1,10 @@
 from typing import Union
-from fastapi import FastAPI
+from fastapi import FastAPI, UploadFile, File
 import time
 from typing import List
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, FileResponse
 from pydantic import BaseModel
-from script import run_yolo, get_ocr_result, get_doc_class, runDocUMind, multiDoc, multiRelation
+from script import run_yolo, get_ocr_result, get_doc_class, runDocUMind, multiDoc, multiRelation,classifyFromZipFile
 from fastapi.middleware.cors import CORSMiddleware
 
 
@@ -107,3 +107,10 @@ async def index(document: Document):
 # @app.post("/classify/pdf")
 # async def index(pdf: Pdf):
 #     return {"text": classify_pdf(pdf.b64, pdf.filename)}
+
+@app.post("/upload-zip/")
+async def create_upload_file(file: UploadFile = File(...)):
+    contents = await file.read()
+    print("_____________________",type(contents))
+    classifyFromZipFile(contents)
+    return FileResponse('result.zip')

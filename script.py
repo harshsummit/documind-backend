@@ -29,7 +29,7 @@ from sklearn.metrics import pairwise_distances
 
 ocr = PaddleOCR(use_angle_cls=True, lang='en')
 
-yolo_model = torch.hub.load('ultralytics/yolov5', 'custom', path='models/yolo.pt')
+# yolo_model = torch.hub.load('ultralytics/yolov5', 'custom', path='models/yolo.pt')
 
 feature_extractor = LayoutLMv3FeatureExtractor(apply_ocr=False)
 tokenizer = LayoutLMv3TokenizerFast.from_pretrained("models/layoutlmv3-base", local_files_only=True)
@@ -41,6 +41,10 @@ img = 'test/test2.jpg'
 
 def converB64tofile(b64):
   image = np.array(Image.open(io.BytesIO(base64.b64decode(b64))).convert("RGB"))
+  return image
+
+def converIOtofile(iobytes):
+  image = np.array(Image.open(BytesIO(iobytes)).convert("RGB"))
   return image
 
 def run_yolo(image_path = img):
@@ -310,3 +314,56 @@ def clusterProfiles(ppimages):
         result.append(image_clusters[key])
 
   return result
+
+
+import zipfile
+from io import BytesIO
+
+def classifyFromZipFile(zip):
+  result = {}
+  zip_file =  zipfile.ZipFile(BytesIO(zip))
+  file_name = zip_file.namelist()
+
+  for filename in file_name:
+    with zip_file.open(filename) as file:
+      contents = file.read()
+      # with open(filename, "wb") as f:
+      #   f.write(contents)
+      image = converIOtofile(contents)
+
+      file_class = get_class(image)["class"]
+
+      if(file_class in result.keys()):
+        result[file_class].append(filename)
+      else:
+        result[file_class] = [filename]
+      
+      print("_________________",file_class)
+      # print("___________",type(contents))
+
+  print("res", result)
+
+  result_zip = zipfile.ZipFile('result.zip', 'w')
+
+  for folder, files in result.items():
+    folder_name = f'{folder}/'
+    result_zip.writestr(folder_name, '')
+    for file in files:
+      print(file)
+      file_path = f'{folder_name}{file}'
+      print('hellooo2')
+
+      fileContent =  zip_file.open(file)
+      print("didnt open")
+      result_zip.writestr(file_path, fileContent.read())
+  
+  print('result_zip', result_zip)
+  # classified_result = result_zip.read()
+  result_zip.close()
+
+  # with open('/result2.zip', 'wb') as f:
+  #   with open('result.zip', 'rb') as zip_file:
+  #     f.write(zip_file.read())
+
+def get_class(image_path):
+  return predict_document_image(image_path, model, processor, get_ocr_result(image_path))
