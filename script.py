@@ -347,7 +347,8 @@ def classifyFromZipFile(zip, version):
   file_name = zip_file.namelist()
 
   for filename in file_name:
-    with zip_file.open(filename) as file:
+    if '/' not in filename:
+      file = zip_file.open(filename)
       contents = file.read()
       # with open(filename, "wb") as f:
       #   f.write(contents)
