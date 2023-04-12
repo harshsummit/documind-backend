@@ -39,6 +39,12 @@ model = model.eval()
 
 img = 'test/test2.jpg'
 
+
+### nlp models
+import pickle
+with open('pkl_models/model.pkl', 'rb') as file:
+    tfidf, nlp_model, id_to_category = pickle.load(file)
+
 def converB64tofile(b64):
   image = np.array(Image.open(io.BytesIO(base64.b64decode(b64))).convert("RGB"))
   return image
@@ -319,7 +325,23 @@ def clusterProfiles(ppimages):
 import zipfile
 from io import BytesIO
 
-def classifyFromZipFile(zip):
+def get_ocr(image):
+  text = ""
+  result = ocr.ocr(image, cls=True)
+  for page in result:
+    for line in page:
+      text += line[1][0]
+
+  return text
+
+def get_nlp_class(image):
+  texts = [get_ocr(image)]
+  text_features = tfidf.transform(texts)
+  predictions = nlp_model.predict(text_features)
+  result = id_to_category[predictions[0]]
+  return result
+
+def classifyFromZipFile(zip, version):
   result = {}
   zip_file =  zipfile.ZipFile(BytesIO(zip))
   file_name = zip_file.namelist()
@@ -331,7 +353,10 @@ def classifyFromZipFile(zip):
       #   f.write(contents)
       image = converIOtofile(contents)
 
-      file_class = get_class(image)["class"]
+      if version==1:
+        file_class = get_class(image)["class"]
+      else:
+        file_class = get_nlp_class(image)
 
       if(file_class in result.keys()):
         result[file_class].append(filename)

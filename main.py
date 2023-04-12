@@ -112,5 +112,12 @@ async def index(document: Document):
 async def create_upload_file(file: UploadFile = File(...)):
     contents = await file.read()
     print("_____________________",type(contents))
-    classifyFromZipFile(contents)
+    classifyFromZipFile(contents, 1)
+    return FileResponse('result.zip')
+
+@app.post("/upload-zip-2/")
+async def create_upload_file(file: UploadFile = File(...)):
+    contents = await file.read()
+    print("_____________________",type(contents))
+    classifyFromZipFile(contents, 2)
     return FileResponse('result.zip')
