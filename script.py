@@ -5,7 +5,7 @@ import numpy as np
 from PIL import Image
 import io
 from datetime import datetime
-
+import pickle
 
 # imports for doc classification
 from doc_classification_test import predict_document_image
@@ -31,11 +31,14 @@ ocr = PaddleOCR(use_angle_cls=True, lang='en')
 
 # yolo_model = torch.hub.load('ultralytics/yolov5', 'custom', path='models/yolo.pt')
 
-feature_extractor = LayoutLMv3FeatureExtractor(apply_ocr=False)
-tokenizer = LayoutLMv3TokenizerFast.from_pretrained("models/layoutlmv3-base", local_files_only=True)
-processor = LayoutLMv3Processor(feature_extractor, tokenizer)
-model = LayoutLMv3ForSequenceClassification.from_pretrained("models/layoutlmv3", local_files_only=True)
-model = model.eval()
+with open('pkl_models/model.pkl', 'rb') as f:
+    model, processor = pickle.load(f)
+
+# feature_extractor = LayoutLMv3FeatureExtractor(apply_ocr=False)
+# tokenizer = LayoutLMv3TokenizerFast.from_pretrained("models/layoutlmv3-base", local_files_only=True)
+# processor = LayoutLMv3Processor(feature_extractor, tokenizer)
+# model = LayoutLMv3ForSequenceClassification.from_pretrained("models/layoutlmv3", local_files_only=True)
+# model = model.eval()
 
 img = 'test/test2.jpg'
 
