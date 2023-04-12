@@ -26,6 +26,7 @@ from deepface import DeepFace
 from sklearn.cluster import DBSCAN
 from sklearn.metrics import pairwise_distances
 ##################
+import fitz
 
 ocr = PaddleOCR(use_angle_cls=True, lang='en')
 
@@ -53,10 +54,16 @@ def converIOtofile(iobytes):
   image = np.array(Image.open(BytesIO(iobytes)).convert("RGB"))
   return image
 
-def converIOtofile2(iobytes):
-  image = np.frombuffer(BytesIO(iobytes).getvalue(), dtype=np.uint8)
+def convertPdftofile(iobytes):
+  doc = fitz.open(stream=BytesIO(iobytes))
+  image = []
+
+  for page in doc:
+    pix = page.get_pixmap()
+    img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
+    image.append(np.array(img))
+  print("HHHHHHHHHHHHHHHHHH", type(image))
   return image
-converIOtofile2
 
 def run_yolo(image_path = img):
     try:
@@ -328,14 +335,21 @@ def clusterProfiles(ppimages):
 
 
 import zipfile
-from io import BytesIO
+from io import BytesIO  
 
 def get_ocr(image):
   text = ""
-  result = ocr.ocr(image, cls=True)
-  for page in result:
-    for line in page:
-      text += line[1][0]
+  if isinstance(image, list):
+    for x in image:
+      result = ocr.ocr(x, cls=True)
+      for page in result:
+        for line in page:
+          text += line[1][0] + ' '
+  else:
+    result = ocr.ocr(image, cls=True)
+    for page in result:
+      for line in page:
+        text += line[1][0] + ' '
 
   return text
 
@@ -355,23 +369,21 @@ def classifyFromZipFile(zip, version):
     if '/' not in filename:
       file = zip_file.open(filename)
       contents = file.read()
-      # with open(filename, "wb") as f:
-      #   f.write(contents)
+
+      if contents[:4] == b'%PDF':
+        image = convertPdftofile(contents)
+      else:
+        image = converIOtofile(contents)
 
       if version==1:
-        image = converIOtofile(contents)
         file_class = get_class(image)["class"]
       else:
-        image = converIOtofile2(contents)
         file_class = get_nlp_class(image)
 
       if(file_class in result.keys()):
         result[file_class].append(filename)
       else:
         result[file_class] = [filename]
-      
-      print("_________________",file_class)
-      # print("___________",type(contents))
 
   print("res", result)
 
