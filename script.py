@@ -42,7 +42,7 @@ img = 'test/test2.jpg'
 
 ### nlp models
 import pickle
-with open('pkl_models/model.pkl', 'rb') as file:
+with open('pkl_models/nlp_model.pkl', 'rb') as file:
     tfidf, nlp_model, id_to_category = pickle.load(file)
 
 def converB64tofile(b64):
