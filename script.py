@@ -31,14 +31,14 @@ ocr = PaddleOCR(use_angle_cls=True, lang='en')
 
 # yolo_model = torch.hub.load('ultralytics/yolov5', 'custom', path='models/yolo.pt')
 
-# with open('pkl_models/model.pkl', 'rb') as f:
-#     model, processor = pickle.load(f)
+with open('pkl_models/model.pkl', 'rb') as f:
+    model, processor = pickle.load(f)
 
-feature_extractor = LayoutLMv3FeatureExtractor(apply_ocr=False)
-tokenizer = LayoutLMv3TokenizerFast.from_pretrained("models/layoutlmv3-base", local_files_only=True)
-processor = LayoutLMv3Processor(feature_extractor, tokenizer)
-model = LayoutLMv3ForSequenceClassification.from_pretrained("models/layoutlmv3", local_files_only=True)
-model = model.eval()
+# feature_extractor = LayoutLMv3FeatureExtractor(apply_ocr=False)
+# tokenizer = LayoutLMv3TokenizerFast.from_pretrained("models/layoutlmv3-base", local_files_only=True)
+# processor = LayoutLMv3Processor(feature_extractor, tokenizer)
+# model = LayoutLMv3ForSequenceClassification.from_pretrained("models/layoutlmv3", local_files_only=True)
+# model = model.eval()
 
 img = 'test/test2.jpg'
 
