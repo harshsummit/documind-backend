@@ -125,6 +125,8 @@ async def create_upload_file(file: UploadFile = File(...)):
         with open('result.zip', mode = 'rb') as file:
             while True:
                 data = file.read(4096)
+                print("______________________________________-")
+                print(data)
                 if not data:
                     break
                 yield data
