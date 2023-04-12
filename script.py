@@ -54,7 +54,7 @@ def converIOtofile(iobytes):
   return image
 
 def converIOtofile2(iobytes):
-  image = np.frombuffer(BytesIO(iobytes))
+  image = np.frombuffer(BytesIO(iobytes).getvalue(), dtype=np.uint8)
   return image
 converIOtofile2
 
