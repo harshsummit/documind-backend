@@ -53,6 +53,11 @@ def converIOtofile(iobytes):
   image = np.array(Image.open(BytesIO(iobytes)).convert("RGB"))
   return image
 
+def converIOtofile2(iobytes):
+  image = np.frombuffer(BytesIO(iobytes))
+  return image
+converIOtofile2
+
 def run_yolo(image_path = img):
     try:
       results = yolo_model(image_path)
@@ -352,11 +357,12 @@ def classifyFromZipFile(zip, version):
       contents = file.read()
       # with open(filename, "wb") as f:
       #   f.write(contents)
-      image = converIOtofile(contents)
 
       if version==1:
+        image = converIOtofile(contents)
         file_class = get_class(image)["class"]
       else:
+        image = converIOtofile2(contents)
         file_class = get_nlp_class(image)
 
       if(file_class in result.keys()):
