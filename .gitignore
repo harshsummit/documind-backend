@@ -5,6 +5,7 @@ __pycache__/
 
 models/
 pkl_models/
+*.zip
 # C extensions
 *.so
 
