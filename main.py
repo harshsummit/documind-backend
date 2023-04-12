@@ -2,7 +2,7 @@ from typing import Union
 from fastapi import FastAPI, UploadFile, File
 import time
 from typing import List
-from fastapi.responses import JSONResponse, FileResponse
+from fastapi.responses import JSONResponse, FileResponse, StreamingResponse
 from pydantic import BaseModel
 from script import run_yolo, get_ocr_result, get_doc_class, runDocUMind, multiDoc, multiRelation,classifyFromZipFile
 from fastapi.middleware.cors import CORSMiddleware
@@ -120,5 +120,18 @@ async def create_upload_file(file: UploadFile = File(...)):
     contents = await file.read()
     print("_____________________",type(contents))
     classifyFromZipFile(contents, 2)
+
+    def file_stream():
+        with open('result.zip', mode = 'rb') as file:
+            while True:
+                data = file.read(4096)
+                if not data:
+                    break
+                yield data
     print("we reached here")
-    return FileResponse('result.zip')
+
+    headers= {
+        "Content-Disposition": "attachment; filename=large_file"
+    }
+    # return FileResponse('result.zip')
+    return StreamingResponse(file_stream(), headers=headers, media_type="application/octet-stream")
