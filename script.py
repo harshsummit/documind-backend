@@ -30,7 +30,7 @@ import fitz
 
 ocr = PaddleOCR(use_angle_cls=True, lang='en')
 
-# yolo_model = torch.hub.load('ultralytics/yolov5', 'custom', path='models/yolo.pt')
+yolo_model = torch.hub.load('ultralytics/yolov5', 'custom', path='models/yolo.pt')
 
 feature_extractor = LayoutLMv3FeatureExtractor(apply_ocr=False)
 tokenizer = LayoutLMv3TokenizerFast.from_pretrained("models/layoutlmv3-base", local_files_only=True)
