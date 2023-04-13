@@ -121,4 +121,4 @@ async def create_upload_file(file: UploadFile = File(...)):
     print("_____________________",type(contents))
     classifyFromZipFile(contents, 2)
     print("we reached ")
-    return FileResponse('result.zip')
+    return FileResponse('result.zip', filename="result.zip")
