@@ -62,7 +62,6 @@ def convertPdftofile(iobytes):
     pix = page.get_pixmap()
     img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
     image.append(np.array(img))
-  print("HHHHHHHHHHHHHHHHHH", type(image))
   return image
 
 def run_yolo(image_path = img):
@@ -413,7 +412,7 @@ def classifyFromZipFile(zip, version):
   
   print("LOG: Created result.zip file")
   result_zip.close()
-  
+
   return
 
 def get_class(image_path):
