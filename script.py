@@ -104,7 +104,7 @@ def get_doc_class(ocr_result = [], image_path=img):
 
 def runDocUMind(docid,doc_label,filename, classification_threshold, idChecks, detailCheck, image_path=img, ppimages=[]):
   docType = "NON ID"
-  if doc_label in ["PAN Card", "Aadhar", "Driving"]:
+  if doc_label in ["PAN Card", "ID", "Driving"]:
     docType = "ID Proof"
   response = { "docid": docid,"name":filename, "label": doc_label, "docType": docType, "uploadedDate": datetime.now().strftime("%d/%m/%Y")
 , "status": "Approve"}
