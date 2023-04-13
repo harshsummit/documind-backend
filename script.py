@@ -84,7 +84,7 @@ def run_yolo(image_path = img):
        return "Yolo Failed"
 
 def get_ocr_result(image_path = img):
-  print("LOG: Running OCR")
+  print("DOCUMIND LOG: Running OCR")
   result = ocr.ocr(image_path, cls=True)
   results_dict = []
 
@@ -354,10 +354,10 @@ def get_ocr(image):
   return text
 
 def get_nlp_class(image):
-  print("LOG: Running OCR")
+  print("DOCUMIND LOG: Running OCR")
   texts = [get_ocr(image)]
   text_features = tfidf.transform(texts)
-  print("LOG: Predicting file type")
+  print("DOCUMIND LOG: Predicting file type")
   predictions = nlp_model.predict(text_features)
   result = id_to_category[predictions[0]]
   return result
@@ -365,10 +365,10 @@ def get_nlp_class(image):
 def classifyFromZipFile(zip, version):
   result = {}
   zip_file =  zipfile.ZipFile(BytesIO(zip))
-  print("LOG: Opening Zip File")
+  print("DOCUMIND LOG: Opening Zip File")
   file_name = zip_file.namelist()
 
-  print("LOG: Files in zip ", file_name)
+  print("DOCUMIND LOG: Files in zip ", file_name)
   for filename in file_name:
     if '/' not in filename:
       file = zip_file.open(filename)
@@ -380,21 +380,21 @@ def classifyFromZipFile(zip, version):
         image = converIOtofile(contents)
 
       if version==1:
-        print("LOG: Running LayoutLMv3 Model on ", filename)
+        print("DOCUMIND LOG: Running LayoutLMv3 Model on ", filename)
         file_class = get_class(image)["class"]
       else:
-        print("LOG: Running SVM Model on ", filename)
+        print("DOCUMIND LOG: Running SVM Model on ", filename)
         file_class = get_nlp_class(image)
 
-      print("LOG: ", filename, " is of type ", file_class)
+      print("DOCUMIND LOG: ", filename, " is of type ", file_class)
 
       if(file_class in result.keys()):
         result[file_class].append(filename)
       else:
         result[file_class] = [filename]
 
-  print("LOG: Files and their classes", result)
-  print("LOG: Creating result.zip file")
+  print("DOCUMIND LOG: Files and their classes", result)
+  print("DOCUMIND LOG: Creating result.zip file")
 
   result_zip = zipfile.ZipFile('result.zip', 'w')
 
@@ -403,14 +403,14 @@ def classifyFromZipFile(zip, version):
     result_zip.writestr(folder_name, '')
     for file in files:
       file_path = f'{folder_name}{file}'
-      print("LOG: Adding ", file, " to ", folder_name, " folder")
+      print("DOCUMIND LOG: Adding ", file, " to ", folder_name, " folder")
 
       fileContent =  zip_file.open(file)
       result_zip.writestr(file_path, fileContent.read())
-      print("LOG: Added ", file, " to ", folder_name, " folder")
+      print("DOCUMIND LOG: Added ", file, " to ", folder_name, " folder")
 
   
-  print("LOG: Created result.zip file")
+  print("DOCUMIND LOG: Created result.zip file")
   result_zip.close()
 
   return
