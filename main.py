@@ -118,7 +118,7 @@ async def create_upload_file(file: UploadFile = File(...)):
 @app.post("/upload-zip-2/")
 async def create_upload_file(file: UploadFile = File(...)):
     contents = await file.read()
-    print("_____________________",type(contents))
+    print("LOG: Recieved ", file.filename)
     classifyFromZipFile(contents, 2)
-    print("we reached ")
+    print("LOG: Sending Result.zip back!")
     return FileResponse('result.zip', filename="result.zip")
